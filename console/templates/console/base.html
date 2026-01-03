@@ -1,0 +1,31 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Ollama Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/app.css' %}" />
+    <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+    <script src="{% static 'js/app.js' %}" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container topbar__inner">
+        <div class="brand">
+          <a class="brand__link" href="{% url 'console:dashboard' %}">Ollama Console</a>
+        </div>
+        <nav class="nav">
+          <a class="nav__link" href="{% url 'console:dashboard' %}">Dashboard</a>
+          <a class="nav__link" href="{% url 'console:chat' %}">Chat</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>
+
+

@@ -1,0 +1,95 @@
+{% extends "console/base.html" %}
+
+{% block title %}Chat · Ollama Console{% endblock %}
+
+{% block content %}
+  <section class="pagehead">
+    <h1 class="pagehead__title">Chat</h1>
+    <p class="pagehead__subtitle">Streaming chat with saved local history.</p>
+  </section>
+
+  {% if ollama_error %}
+    <div class="alert alert--error">
+      <div class="alert__title">Ollama is not reachable</div>
+      <div class="alert__body">{{ ollama_error }}</div>
+    </div>
+  {% endif %}
+
+  <div class="split">
+    <aside class="card sidebar">
+      <div class="sidebar__head">
+        <h2>Chats</h2>
+        <form method="post" action="{% url 'console:chat_new' %}">
+          {% csrf_token %}
+          <input type="hidden" name="model" value="{{ selected_session.model }}" />
+          <button class="btn btn--secondary" type="submit">New</button>
+        </form>
+      </div>
+
+      <div class="sessions">
+        {% for s in sessions %}
+          <a
+            class="session {% if s.id == selected_session.id %}session--active{% endif %}"
+            href="{% url 'console:chat' %}?session={{ s.id }}"
+          >
+            <div class="session__title">{{ s.title }}</div>
+            <div class="session__meta mono">{{ s.model }}</div>
+          </a>
+        {% endfor %}
+      </div>
+    </aside>
+
+    <section class="card chatpanel">
+      <div class="chatpanel__head">
+        <div>
+          <h2 class="chatpanel__title">{{ selected_session.title }}</h2>
+          <div class="muted mono">Model: {{ selected_session.model }}</div>
+        </div>
+
+        <form class="modelpicker" method="post" action="{% url 'console:chat_set_model' %}">
+          {% csrf_token %}
+          <input type="hidden" name="session_id" value="{{ selected_session.id }}" />
+          {% if available_models %}
+            <select class="select" name="model">
+              {% for m in available_models %}
+                <option value="{{ m }}" {% if m == selected_session.model %}selected{% endif %}>{{ m }}</option>
+              {% endfor %}
+            </select>
+          {% else %}
+            <input class="input" name="model" value="{{ selected_session.model }}" />
+          {% endif %}
+          <button class="btn btn--secondary" type="submit">Set</button>
+        </form>
+      </div>
+
+      <div id="messages" class="messages">
+        {% for m in messages %}
+          <div class="msg msg--{{ m.role }}">
+            <div class="msg__role mono">{{ m.role }}</div>
+            <div class="msg__content">{{ m.content|linebreaksbr }}</div>
+          </div>
+        {% empty %}
+          <div id="no-messages-placeholder" class="muted">No messages yet.</div>
+        {% endfor %}
+      </div>
+
+      <form id="chat-form" class="composer" autocomplete="off">
+        {% csrf_token %}
+        <input type="hidden" id="chat-session-id" value="{{ selected_session.id }}" />
+        <textarea
+          id="chat-input"
+          class="textarea"
+          rows="3"
+          placeholder="Write a message…"
+          required
+        ></textarea>
+        <div class="composer__row">
+          <button class="btn" type="submit">Send</button>
+          <div id="chat-status" class="muted mono"></div>
+        </div>
+      </form>
+    </section>
+  </div>
+{% endblock %}
+
+

@@ -1,0 +1,46 @@
+{% if models %}
+  <div class="tablewrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Family</th>
+          <th>Params</th>
+          <th>Quant</th>
+          <th class="right">Size</th>
+          <th>Modified</th>
+          <th class="right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in models %}
+          <tr>
+            <td><code>{{ m.name }}</code></td>
+            <td>{{ m.details.family|default:"-" }}</td>
+            <td>{{ m.details.parameter_size|default:"-" }}</td>
+            <td>{{ m.details.quantization_level|default:"-" }}</td>
+            <td class="right">{{ m.size|filesizeformat }}</td>
+            <td class="mono">{{ m.modified_at|default:"-" }}</td>
+            <td class="right">
+              <form
+                method="post"
+                hx-post="{% url 'console:model_delete' %}"
+                hx-target="#models-container"
+                hx-swap="innerHTML"
+                hx-confirm="Delete {{ m.name }}?"
+              >
+                {% csrf_token %}
+                <input type="hidden" name="model" value="{{ m.name }}" />
+                <button class="btn btn--danger" type="submit">Delete</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="muted">No local models found.</div>
+{% endif %}
+
+

@@ -1,0 +1,18 @@
+<div class="kv">
+  <div class="kv__row">
+    <div class="kv__key">Ollama URL</div>
+    <div class="kv__val"><code>{{ ollama_base_url }}</code></div>
+  </div>
+  <div class="kv__row">
+    <div class="kv__key">Version</div>
+    <div class="kv__val">
+      {% if ollama_version %}
+        <code>{{ ollama_version }}</code>
+      {% else %}
+        <span class="muted">unknown</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+

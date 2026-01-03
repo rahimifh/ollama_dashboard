@@ -1,0 +1,96 @@
+{% extends "console/base.html" %}
+
+{% block title %}Dashboard · Ollama Console{% endblock %}
+
+{% block content %}
+  <section class="pagehead">
+    <h1 class="pagehead__title">Dashboard</h1>
+    <p class="pagehead__subtitle">Local Ollama status and model management.</p>
+  </section>
+
+  {% if error %}
+    <div class="alert alert--error">
+      <div class="alert__title">Ollama is not reachable</div>
+      <div class="alert__body">{{ error }}</div>
+      {% if error_details %}
+        <details class="alert__details">
+          <summary>Details</summary>
+          <pre class="mono">{{ error_details|pprint }}</pre>
+        </details>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <section class="card">
+    <div class="card__head">
+      <h2>Status</h2>
+      <button
+        class="btn btn--secondary"
+        hx-get="{% url 'console:partial_status' %}"
+        hx-target="#status"
+        hx-swap="innerHTML"
+        type="button"
+      >
+        Refresh
+      </button>
+    </div>
+    <div id="status">
+      {% include "console/_status.html" %}
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <h2>Models</h2>
+      <button
+        class="btn btn--secondary"
+        hx-get="{% url 'console:partial_models' %}"
+        hx-target="#models-container"
+        hx-swap="innerHTML"
+        type="button"
+      >
+        Refresh
+      </button>
+    </div>
+
+    <form id="pull-form" class="pull" autocomplete="off">
+      {% csrf_token %}
+      <label class="pull__label" for="pull-model">Pull a model</label>
+      <div class="pull__row">
+        <input
+          class="input"
+          id="pull-model"
+          name="model"
+          placeholder="e.g. llama3.2:latest"
+          required
+        />
+        <button class="btn" type="submit">Pull</button>
+      </div>
+      <div id="pull-progress" class="pull__progress mono"></div>
+    </form>
+
+    <div id="models-container">
+      {% include "console/_models_table.html" %}
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <h2>Running models</h2>
+      <button
+        class="btn btn--secondary"
+        hx-get="{% url 'console:partial_running' %}"
+        hx-target="#running-container"
+        hx-swap="innerHTML"
+        type="button"
+      >
+        Refresh
+      </button>
+    </div>
+    <div id="running-container">
+      {% include "console/_running_table.html" %}
+    </div>
+  </section>
+{% endblock %}
+
+

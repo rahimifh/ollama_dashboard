@@ -1,0 +1,32 @@
+{% if running_models %}
+  <div class="tablewrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Family</th>
+          <th>Params</th>
+          <th>Quant</th>
+          <th>Expires</th>
+          <th class="right">VRAM</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in running_models %}
+          <tr>
+            <td><code>{{ m.name }}</code></td>
+            <td>{{ m.details.family|default:"-" }}</td>
+            <td>{{ m.details.parameter_size|default:"-" }}</td>
+            <td>{{ m.details.quantization_level|default:"-" }}</td>
+            <td class="mono">{{ m.expires_at|default:"-" }}</td>
+            <td class="right">{{ m.size_vram|default:0|filesizeformat }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="muted">No running models loaded.</div>
+{% endif %}
+
+
