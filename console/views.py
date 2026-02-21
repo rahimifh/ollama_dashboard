@@ -12,6 +12,7 @@ from django.http import (
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 
 from .models import ChatMessage, ChatSession
 from .services import ollama
@@ -94,6 +95,7 @@ def chat(request: HttpRequest) -> HttpResponse:
 
 
 @require_POST
+@csrf_protect
 def chat_new(request: HttpRequest) -> HttpResponse:
     model = (request.POST.get("model") or "").strip() or _default_chat_model()
     title = (request.POST.get("title") or "").strip() or "New chat"
@@ -102,6 +104,7 @@ def chat_new(request: HttpRequest) -> HttpResponse:
 
 
 @require_POST
+@csrf_protect
 def chat_set_model(request: HttpRequest) -> HttpResponse:
     session_id = (request.POST.get("session_id") or "").strip()
     model = (request.POST.get("model") or "").strip()
@@ -136,6 +139,7 @@ def partial_running(request: HttpRequest) -> HttpResponse:
 
 
 @require_POST
+@csrf_protect
 def model_delete(request: HttpRequest) -> HttpResponse:
     model = (request.POST.get("model") or "").strip()
     if not model:
@@ -163,6 +167,7 @@ def _request_data(request: HttpRequest) -> dict[str, Any]:
 
 
 @require_POST
+@csrf_protect
 def api_models_pull(request: HttpRequest) -> StreamingHttpResponse:
     data = _request_data(request)
     model = str(data.get("model", "")).strip()
@@ -186,6 +191,7 @@ def api_models_pull(request: HttpRequest) -> StreamingHttpResponse:
 
 
 @require_POST
+@csrf_protect
 def api_chat_stream(request: HttpRequest) -> StreamingHttpResponse:
     data = _request_data(request)
     session_id = str(data.get("session_id", "")).strip()

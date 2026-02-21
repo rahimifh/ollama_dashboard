@@ -1,9 +1,10 @@
 {% extends "console/base.html" %}
+{% load markdown_deux_tags %}
 
 {% block title %}Chat · Ollama Console{% endblock %}
 
 {% block content %}
-  <section class="pagehead">
+  <section class="pagehead" >
     <h1 class="pagehead__title">Chat</h1>
     <p class="pagehead__subtitle">Streaming chat with saved local history.</p>
   </section>
@@ -62,11 +63,11 @@
         </form>
       </div>
 
-      <div id="messages" class="messages">
+      <div id="messages" class="messages" dir="rtl">
         {% for m in messages %}
           <div class="msg msg--{{ m.role }}">
             <div class="msg__role mono">{{ m.role }}</div>
-            <div class="msg__content">{{ m.content|linebreaksbr }}</div>
+            <div class="msg__content">{{ m.content|markdown }}</div>
           </div>
         {% empty %}
           <div id="no-messages-placeholder" class="muted">No messages yet.</div>
@@ -90,6 +91,9 @@
       </form>
     </section>
   </div>
+  <footer>
+    
+  </footer>
 {% endblock %}
 
 

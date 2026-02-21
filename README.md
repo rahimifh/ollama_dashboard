@@ -62,4 +62,3 @@ curl http://localhost:11434/api/version
   - `POST /api/models/pull` (NDJSON stream)
   - `POST /api/chat/stream` (NDJSON stream)
 
-
