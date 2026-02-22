@@ -96,6 +96,23 @@ DATABASES = {
 }
 
 
+# Cache configuration
+# https://docs.djangoproject.com/en/6.0/topics/cache/
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,  # 5 minutes default cache timeout
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    }
+}
+
+# Ollama cache settings
+OLLAMA_CACHE_TIMEOUT_SECONDS = int(os.environ.get('OLLAMA_CACHE_TIMEOUT_SECONDS', '30'))
+
+
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 

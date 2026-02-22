@@ -7,6 +7,10 @@ class ChatSession(models.Model):
 
     class Meta:
         ordering = ["-created_at", "-id"]
+        indexes = [
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['model']),
+        ]
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.title} ({self.model})"
@@ -34,6 +38,11 @@ class ChatMessage(models.Model):
 
     class Meta:
         ordering = ["created_at", "id"]
+        indexes = [
+            models.Index(fields=['session', 'created_at']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['role']),
+        ]
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.role}: {self.content[:40]}"

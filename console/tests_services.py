@@ -1,4 +1,4 @@
-pip"""
+"""
 Unit tests for the Ollama service.
 """
 

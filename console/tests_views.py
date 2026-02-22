@@ -295,8 +295,9 @@ class TestStreamingAPIViews(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response['Content-Type'], 'application/x-ndjson')
         
-        # Parse NDJSON response
-        lines = response.content.decode().strip().split('\n')
+        # Parse NDJSON response from streaming content
+        content = b''.join(response.streaming_content).decode()
+        lines = content.strip().split('\n')
         self.assertEqual(len(lines), 1)
         data = json.loads(lines[0])
         self.assertIn('error', data)
@@ -320,8 +321,9 @@ class TestStreamingAPIViews(TestCase):
         self.assertEqual(response['Content-Type'], 'application/x-ndjson')
         self.assertEqual(response['Cache-Control'], 'no-cache')
         
-        # Parse NDJSON response
-        lines = response.content.decode().strip().split('\n')
+        # Parse NDJSON response from streaming content
+        content = b''.join(response.streaming_content).decode()
+        lines = content.strip().split('\n')
         self.assertEqual(len(lines), 2)
         
         data1 = json.loads(lines[0])
