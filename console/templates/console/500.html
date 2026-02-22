@@ -1,0 +1,29 @@
+{% extends "console/base.html" %}
+
+{% block title %}Server Error (500) - Ollama Dashboard{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-content">
+        <h1 class="error-code">500</h1>
+        <h2 class="error-title">Internal Server Error</h2>
+        <p class="error-message">
+            Something went wrong on our end. We're working to fix the issue as soon as possible.
+        </p>
+        <div class="error-actions">
+            <a href="{% url 'console:dashboard' %}" class="btn btn-primary">
+                Go to Dashboard
+            </a>
+            <a href="{% url 'console:chat' %}" class="btn btn-secondary">
+                Go to Chat
+            </a>
+            <button onclick="window.location.reload()" class="btn btn-outline">
+                Try Again
+            </button>
+        </div>
+        <p class="error-help">
+            Please try again in a few moments. If the problem persists, contact support.
+        </p>
+    </div>
+</div>
+{% endblock %}

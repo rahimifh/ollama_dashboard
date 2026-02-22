@@ -1,0 +1,26 @@
+{% extends "console/base.html" %}
+
+{% block title %}Access Denied (403) - Ollama Dashboard{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-content">
+        <h1 class="error-code">403</h1>
+        <h2 class="error-title">Access Denied</h2>
+        <p class="error-message">
+            You don't have permission to access this page.
+        </p>
+        <div class="error-actions">
+            <a href="{% url 'console:dashboard' %}" class="btn btn-primary">
+                Go to Dashboard
+            </a>
+            <a href="{% url 'console:chat' %}" class="btn btn-secondary">
+                Go to Chat
+            </a>
+        </div>
+        <p class="error-help">
+            If you believe you should have access, please check your permissions or contact an administrator.
+        </p>
+    </div>
+</div>
+{% endblock %}

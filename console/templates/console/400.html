@@ -1,0 +1,29 @@
+{% extends "console/base.html" %}
+
+{% block title %}Bad Request (400) - Ollama Dashboard{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-content">
+        <h1 class="error-code">400</h1>
+        <h2 class="error-title">Bad Request</h2>
+        <p class="error-message">
+            The server could not understand your request due to invalid syntax or missing parameters.
+        </p>
+        <div class="error-actions">
+            <a href="{% url 'console:dashboard' %}" class="btn btn-primary">
+                Go to Dashboard
+            </a>
+            <a href="{% url 'console:chat' %}" class="btn btn-secondary">
+                Go to Chat
+            </a>
+            <button onclick="window.history.back()" class="btn btn-outline">
+                Go Back
+            </button>
+        </div>
+        <p class="error-help">
+            Please check your request and try again. If the problem persists, contact support.
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -17,7 +17,17 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+# Import error handlers from console app
+from console import views as console_views
+
 urlpatterns = [
     path('', include('console.urls')),
     path('admin/', admin.site.urls),
 ]
+
+# Error handlers
+handler404 = console_views.handler404
+handler500 = console_views.handler500
+handler403 = console_views.handler403
+handler400 = console_views.handler400
+

@@ -1,0 +1,29 @@
+{% extends "console/base.html" %}
+
+{% block title %}Test Error Pages - Ollama Dashboard{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Test Error Pages</h2>
+    <p>Use the links below to test the custom error pages:</p>
+    
+    <div class="error-actions" style="margin-top: 20px;">
+        <a href="/nonexistent-page" class="btn btn-primary">
+            Test 404 Page
+        </a>
+        <a href="{% url 'console:test_500' %}" class="btn btn-secondary">
+            Test 500 Page
+        </a>
+        <a href="{% url 'console:test_403' %}" class="btn btn-outline">
+            Test 403 Page
+        </a>
+        <a href="{% url 'console:test_400' %}" class="btn btn-outline">
+            Test 400 Page
+        </a>
+    </div>
+    
+    <p style="margin-top: 20px; color: var(--muted); font-size: 14px;">
+        Note: The 500 test will trigger an intentional server error.
+    </p>
+</div>
+{% endblock %}

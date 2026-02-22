@@ -1,0 +1,26 @@
+{% extends "console/base.html" %}
+
+{% block title %}Page Not Found (404) - Ollama Dashboard{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-content">
+        <h1 class="error-code">404</h1>
+        <h2 class="error-title">Page Not Found</h2>
+        <p class="error-message">
+            The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.
+        </p>
+        <div class="error-actions">
+            <a href="{% url 'console:dashboard' %}" class="btn btn-primary">
+                Go to Dashboard
+            </a>
+            <a href="{% url 'console:chat' %}" class="btn btn-secondary">
+                Go to Chat
+            </a>
+        </div>
+        <p class="error-help">
+            If you believe this is an error, please check the URL or contact support.
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -1,4 +1,4 @@
-:root {
+":root {
   --bg: #0b1020;
   --panel: #101830;
   --panel2: #0f1730;
@@ -399,4 +399,111 @@ h2 {
   gap: 12px;
 }
 
+/* Error page styles */
+.error-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 200px);
+  padding: 40px 20px;
+}
 
+.error-content {
+  text-align: center;
+  max-width: 600px;
+  padding: 40px;
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px var(--shadow);
+}
+
+.error-code {
+  font-size: 120px;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--accent) 0%, #8a5bff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.error-title {
+  font-size: 32px;
+  margin: 20px 0 10px;
+  color: var(--text);
+}
+
+.error-message {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 0 0 30px;
+}
+
+.error-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+}
+
+.error-actions .btn {
+  padding: 12px 24px;
+  font-size: 16px;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.error-actions .btn-primary {
+  background: rgba(91, 140, 255, 0.2);
+  border-color: rgba(91, 140, 255, 0.6);
+}
+
+.error-actions .btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.error-actions .btn-outline {
+  background: transparent;
+  border-color: var(--border);
+}
+
+.error-help {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Responsive error pages */
+@media (max-width: 768px) {
+  .error-code {
+    font-size: 80px;
+  }
+  
+  .error-title {
+    font-size: 24px;
+  }
+  
+  .error-message {
+    font-size: 16px;
+  }
+  
+  .error-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .error-actions .btn {
+    width: 100%;
+    max-width: 250px;
+  }
+  
+  .error-content {
+    padding: 30px 20px;
+  }
+}"

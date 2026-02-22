@@ -13,9 +13,65 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
+from django.core.exceptions import PermissionDenied, BadRequest
 
 from .models import ChatMessage, ChatSession
 from .services import ollama
+
+
+# Error handlers
+def handler404(request: HttpRequest, exception=None) -> HttpResponse:
+    """Custom 404 error handler."""
+    return render(request, 'console/404.html', status=404)
+
+
+def handler500(request: HttpRequest) -> HttpResponse:
+    """Custom 500 error handler."""
+    return render(request, 'console/500.html', status=500)
+
+
+def handler403(request: HttpRequest, exception=None) -> HttpResponse:
+    """Custom 403 error handler."""
+    return render(request, 'console/403.html', status=403)
+
+
+def handler400(request: HttpRequest, exception=None) -> HttpResponse:
+    """Custom 400 error handler."""
+    return render(request, 'console/400.html', status=400)
+
+
+# Test views for error pages (only in debug mode)
+@require_GET
+def test_errors(request: HttpRequest) -> HttpResponse:
+    """Test page for error pages."""
+    if not settings.DEBUG:
+        return redirect('console:dashboard')
+    return render(request, 'console/test_errors.html')
+
+
+@require_GET
+def test_500_error(request: HttpRequest) -> HttpResponse:
+    """Trigger a 500 error for testing."""
+    if not settings.DEBUG:
+        return redirect('console:dashboard')
+    # Raise an exception to trigger the 500 error page
+    raise Exception("This is a test exception for the 500 error page")
+
+
+@require_GET
+def test_403_error(request: HttpRequest) -> HttpResponse:
+    """Trigger a 403 error for testing."""
+    if not settings.DEBUG:
+        return redirect('console:dashboard')
+    raise PermissionDenied("This is a test permission denied error")
+
+
+@require_GET
+def test_400_error(request: HttpRequest) -> HttpResponse:
+    """Trigger a 400 error for testing."""
+    if not settings.DEBUG:
+        return redirect('console:dashboard')
+    raise BadRequest("This is a test bad request error")
 
 
 def _get_dashboard_context() -> dict[str, Any]:
