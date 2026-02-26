@@ -1,0 +1,81 @@
+{% if jobs %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Base Model</th>
+        <th>Status</th>
+        <th>Progress</th>
+        <th>Created</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for job in jobs %}
+        <tr 
+          class="job-row" 
+          data-job-id="{{ job.id }}"
+          data-status="{{ job.status }}"
+          style="cursor: pointer;"
+        >
+          <td>
+            <strong>{{ job.name }}</strong>
+            {% if job.fine_tuned_model %}
+              <div class="muted mono small">{{ job.fine_tuned_model }}</div>
+            {% endif %}
+          </td>
+          <td class="mono">{{ job.base_model }}</td>
+          <td>
+            <span class="status-badge status-{{ job.status }}">
+              {{ job.get_status_display }}
+            </span>
+          </td>
+          <td>
+            <div class="progress">
+              <div 
+                class="progress-bar" 
+                style="width: {{ job.progress_percentage }}%;"
+              ></div>
+              <span class="progress-text">{{ job.progress_percentage|floatformat:1 }}%</span>
+            </div>
+            <div class="muted small">
+              Epoch {{ job.current_epoch }} of {{ job.epochs }}
+              {% if job.loss %}
+                · Loss: {{ job.loss|floatformat:4 }}
+              {% endif %}
+            </div>
+          </td>
+          <td>
+            {{ job.created_at|date:"Y-m-d H:i" }}
+            {% if job.duration %}
+              <div class="muted small">{{ job.duration|floatformat:0 }}s</div>
+            {% endif %}
+          </td>
+          <td>
+            <div class="actions">
+              {% if job.status == "running" %}
+                <button 
+                  class="btn btn--small btn--danger job-cancel" 
+                  data-job-id="{{ job.id }}"
+                >
+                  Cancel
+                </button>
+              {% endif %}
+              <button 
+                class="btn btn--small btn--danger job-delete" 
+                data-job-id="{{ job.id }}"
+              >
+                Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <div class="empty-state">
+    <p class="muted">No fine-tuning jobs yet.</p>
+    <p>Create your first fine-tuning job using the form on the left.</p>
+  </div>
+{% endif %}

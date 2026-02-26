@@ -19,6 +19,11 @@ from .models import ChatMessage, ChatSession
 from .services import ollama
 
 
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_GET, require_POST
+from .models import ChatMessage, ChatSession, FineTuningJob
+from .services import ollama, finetuning
+
 # Error handlers
 def handler404(request: HttpRequest, exception=None) -> HttpResponse:
     """Custom 404 error handler."""
@@ -312,3 +317,272 @@ def api_chat_stream(request: HttpRequest) -> StreamingHttpResponse:
     resp = StreamingHttpResponse(gen(), content_type="application/x-ndjson")
     resp["Cache-Control"] = "no-cache"
     return resp
+
+#================================================ finetune 
+
+@require_POST
+@csrf_protect
+def api_chat_stream(request: HttpRequest) -> StreamingHttpResponse:
+    data = _request_data(request)
+    session_id = str(data.get("session_id", "")).strip()
+    content = str(data.get("content", "")).strip()
+
+    if not session_id or not content:
+        return StreamingHttpResponse(
+            iter([json.dumps({"error": "Missing session_id or content", "done": True}) + "\n"]),
+            content_type="application/x-ndjson",
+            status=400,
+        )
+
+    session = ChatSession.objects.filter(pk=session_id).first()
+    if session is None:
+        return StreamingHttpResponse(
+            iter([json.dumps({"error": "Unknown session", "done": True}) + "\n"]),
+            content_type="application/x-ndjson",
+            status=404,
+        )
+
+    # Persist user message immediately.
+    ChatMessage.objects.create(session=session, role=ChatMessage.ROLE_USER, content=content)
+
+    # Build message history from DB in order.
+    history = [
+        {"role": m.role, "content": m.content} for m in session.messages.all()
+    ]
+
+    def gen() -> Any:
+        close_old_connections()
+        assistant_parts: list[str] = []
+        try:
+            for chunk in ollama.chat_stream(model=session.model, messages=history):
+                msg = chunk.get("message") or {}
+                delta = msg.get("content") or ""
+                if delta:
+                    assistant_parts.append(str(delta))
+                    yield json.dumps({"delta": str(delta), "done": False}) + "\n"
+
+                if chunk.get("done"):
+                    break
+
+            assistant_text = "".join(assistant_parts)
+            if assistant_text.strip():
+                close_old_connections()
+                ChatMessage.objects.create(
+                    session=session,
+                    role=ChatMessage.ROLE_ASSISTANT,
+                    content=assistant_text,
+                )
+
+                if session.title == "New chat":
+                    title = content.splitlines()[0].strip()[:80]
+                    if title:
+                        session.title = title
+                        session.save(update_fields=["title"])
+
+            yield json.dumps({"done": True}) + "\n"
+        except ollama.OllamaError as e:
+            yield json.dumps({"error": str(e), "details": e.details, "done": True}) + "\n"
+
+    resp = StreamingHttpResponse(gen(), content_type="application/x-ndjson")
+    resp["Cache-Control"] = "no-cache"
+    return resp
+
+
+# Fine-tuning views
+from .models import FineTuningJob
+from .services import finetuning
+
+
+@require_GET
+def finetune(request: HttpRequest) -> HttpResponse:
+    """Fine-tuning dashboard page."""
+    jobs = FineTuningJob.objects.all()
+    
+    # Get available models for base model selection
+    available_models: list[str] = []
+    ollama_error: str | None = None
+    try:
+        available_models = [
+            str(m.get("name"))
+            for m in ollama.list_models().get("models", [])
+            if m.get("name")
+        ]
+    except ollama.OllamaError as e:
+        ollama_error = str(e)
+    
+    ctx: dict[str, Any] = {
+        "jobs": jobs,
+        "available_models": available_models,
+        "ollama_error": ollama_error,
+    }
+    return render(request, "console/finetune.html", ctx)
+
+
+@require_POST
+@csrf_protect
+def finetune_create(request: HttpRequest) -> HttpResponse:
+    """Create a new fine-tuning job."""
+    name = (request.POST.get("name") or "").strip() or "Fine-tuned Model"
+    base_model = (request.POST.get("base_model") or "").strip()
+    epochs = int(request.POST.get("epochs", 3))
+    learning_rate = float(request.POST.get("learning_rate", 0.0001))
+    batch_size = int(request.POST.get("batch_size", 4))
+    
+    # Handle file upload
+    dataset_file = request.FILES.get("dataset_file")
+    if not dataset_file:
+        return JsonResponse({"error": "No dataset file provided"}, status=400)
+    
+    if not base_model:
+        return JsonResponse({"error": "No base model selected"}, status=400)
+    
+    # Save uploaded file temporarily
+    import tempfile
+    import os
+    
+    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(dataset_file.name)[1]) as tmp_file:
+        for chunk in dataset_file.chunks():
+            tmp_file.write(chunk)
+        dataset_path = tmp_file.name
+    
+    try:
+        # Validate dataset
+        dataset_size, errors = finetuning.validate_dataset_format(dataset_path)
+        if errors:
+            os.unlink(dataset_path)
+            return JsonResponse({"error": "Dataset validation failed", "details": errors}, status=400)
+        
+        # Create job
+        job = FineTuningJob.objects.create(
+            name=name,
+            base_model=base_model,
+            epochs=epochs,
+            learning_rate=learning_rate,
+            batch_size=batch_size,
+            dataset_file=dataset_path,
+            dataset_size=dataset_size,
+        )
+        
+        # Start fine-tuning in background
+        finetuning.start_fine_tuning_job(job.id)
+        
+        return JsonResponse({
+            "success": True,
+            "job_id": job.id,
+            "message": f"Fine-tuning job created successfully. Job ID: {job.id}"
+        })
+        
+    except Exception as e:
+        # Clean up temp file on error
+        try:
+            os.unlink(dataset_path)
+        except OSError:
+            pass
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@require_POST
+@csrf_protect
+def finetune_cancel(request: HttpRequest) -> HttpResponse:
+    """Cancel a running fine-tuning job."""
+    job_id = (request.POST.get("job_id") or "").strip()
+    if not job_id:
+        return JsonResponse({"error": "Missing job_id"}, status=400)
+    
+    try:
+        job_id_int = int(job_id)
+    except ValueError:
+        return JsonResponse({"error": "Invalid job_id"}, status=400)
+    
+    success = finetuning.cancel_fine_tuning_job(job_id_int)
+    
+    if success:
+        return JsonResponse({"success": True, "message": "Job cancelled successfully"})
+    else:
+        return JsonResponse({"error": "Failed to cancel job"}, status=400)
+
+
+@require_GET
+def finetune_progress(request: HttpRequest, job_id: int) -> StreamingHttpResponse:
+    """Stream progress updates for a fine-tuning job."""
+    def gen() -> Any:
+        try:
+            for update in finetuning.get_job_progress_stream(job_id):
+                yield json.dumps(update) + "\n"
+        except Exception as e:
+            yield json.dumps({"error": str(e), "done": True}) + "\n"
+    
+    resp = StreamingHttpResponse(gen(), content_type="application/x-ndjson")
+    resp["Cache-Control"] = "no-cache"
+    return resp
+
+
+@require_GET
+def finetune_job_detail(request: HttpRequest, job_id: int) -> HttpResponse:
+    """Get details of a specific fine-tuning job."""
+    try:
+        job = FineTuningJob.objects.get(pk=job_id)
+    except FineTuningJob.DoesNotExist:
+        return JsonResponse({"error": "Job not found"}, status=404)
+    
+    return JsonResponse({
+        "id": job.id,
+        "name": job.name,
+        "base_model": job.base_model,
+        "fine_tuned_model": job.fine_tuned_model,
+        "status": job.status,
+        "progress": job.progress_percentage,
+        "current_epoch": job.current_epoch,
+        "epochs": job.epochs,
+        "current_step": job.current_step,
+        "total_steps": job.total_steps,
+        "loss": job.loss,
+        "duration": job.duration,
+        "created_at": job.created_at.isoformat() if job.created_at else None,
+        "started_at": job.started_at.isoformat() if job.started_at else None,
+        "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+        "error_message": job.error_message,
+    })
+
+
+@require_POST
+@csrf_protect
+def finetune_delete(request: HttpRequest) -> HttpResponse:
+    """Delete a fine-tuning job and associated model."""
+    job_id = (request.POST.get("job_id") or "").strip()
+    if not job_id:
+        return JsonResponse({"error": "Missing job_id"}, status=400)
+    
+    try:
+        job_id_int = int(job_id)
+    except ValueError:
+        return JsonResponse({"error": "Invalid job_id"}, status=400)
+    
+    try:
+        job = FineTuningJob.objects.get(pk=job_id_int)
+        
+        # Delete the fine-tuned model if it exists
+        if job.fine_tuned_model and job.status == FineTuningJob.STATUS_COMPLETED:
+            try:
+                ollama.delete_model(job.fine_tuned_model)
+            except ollama.OllamaError:
+                # Continue even if model deletion fails
+                pass
+        
+        # Clean up dataset file
+        if job.dataset_file:
+            try:
+                import os
+                os.unlink(job.dataset_file)
+            except OSError:
+                pass
+        
+        # Delete the job
+        job.delete()
+        
+        return JsonResponse({"success": True, "message": "Job deleted successfully"})
+        
+    except FineTuningJob.DoesNotExist:
+        return JsonResponse({"error": "Job not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
